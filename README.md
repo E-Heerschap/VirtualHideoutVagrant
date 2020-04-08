@@ -8,7 +8,13 @@ capable of compiling and running the VirtualHideout kernel modules. This box is 
 - Alpine Linux Virtual Distribution iso
 - Package (HashiCorp utility for packaging virtual box)
 
-## Steps to build box. (Prepackaged box available - skip to 'Setup the Vagrantfile')
+## Steps to build box via Vagrantfile
+Simply run `vagrant up` in this directory to download, build and configure the VirtualHideoutVM.
+
+It is recommended that once the VirtualHideoutVM is provisioned that it is then packaged and stored locally. Run `vagrant package --base VirtualHideoutVM --output VirtualHideoutVM.box` to package.
+If you are using this box make sure you remove any preexisitng boxes named VirtualHideoutVM.box already in the vagrant box repository by `vagrant box remove VirtualHideoutVM.box`.
+
+## Steps to manually build box.
 
 1. Start Virtual Box and create an "Alpine Build" VM. This VM is not the packaged VM.
 Instead, this VM is used to build/setup the alpine VM to be used. However, the disk size you select for the build VM is the disk size used for the primary VM. 
@@ -84,11 +90,15 @@ Start the Alpine Build VM with the Alpine Linux Virtual distribution iso from th
 
 * For extra security, it is recommended the public/private keys in the repository should not be used. Instead, generate your own as done in step 14.
 
+* For now the virtual machine must be named "VirtualHideoutVM".
+
+* To increase compile time of the linux kernel (final step in the provision process) change the -jx parameter of the make command in the Vagrant file and let x be the number of cores to use for the compilation.
+
 ## Setup the Vagrantfile
 
 If the Vagrantfile is being setup directly after packaging a VirtualHideoutVM box then a VagrantFile should automatically be created for you. The settings below will need to be added.
 
-If you are NOT packaging your own VirtualHideoutVM, run `vagrant box add -f VirtualHideoutVM.box` to add the box. Ensure the settings below are correct in your Vagrantfile pulled from the repository are correct.
+Unfourtunately, until an S3Bucket hosting a prepackaged box (will occur eventually...) the user MUST build the vagrant box themselves initially.
 
 The required config settings in the Vagrant file are:
 
@@ -111,6 +121,8 @@ config.ssh.private_key_path="YOUR_PATH_TO_PRIVATE_KEY"`
 
 * If network issues occur, try building your own box and noting the MAC address of the first network adapter and adding `config.vm.base_mac="MAC_ADDRESS_HERE"` line to the Vagrant file
 
+* The provisioning process assumes four cores are available for the compilation of the linux kernel. This may be problematic for some pcs. This can be changed by changing the -jx parameter of the make command in the Vagrant file for making the linux kernel. Replace x with the number of cores to use. -j1 is implies no parallel building.
+
 ## Useful resources
 
 * https://www.vagrantup.com/docs/vagrantfile/ssh_settings.html
@@ -119,3 +131,8 @@ config.ssh.private_key_path="YOUR_PATH_TO_PRIVATE_KEY"`
 
 * https://www.vagrantup.com/docs/virtualbox/boxes.html
 
+## TODO
+
+* Change hard name requirement
+
+* Dynamically generate SSH key files.
