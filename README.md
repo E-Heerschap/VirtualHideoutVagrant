@@ -5,16 +5,21 @@ capable of compiling and running the VirtualHideout kernel modules. This box is 
 
 ## Prerequisites
 - Virtual Box
-- Alpine Linux Virtual Distribution iso
 - Package (HashiCorp utility for packaging virtual box)
 
 ## Steps to build box via Vagrantfile
+
+Unfourtunately, until an S3Bucket hosting a prepackaged box (will occur eventually...) the user MUST build the vagrant box themselves initially.
+
 Simply run `vagrant up` in this directory to download, build and configure the VirtualHideoutVM.
 
 It is recommended that once the VirtualHideoutVM is provisioned that it is then packaged and stored locally. Run `vagrant package --base VirtualHideoutVM --output VirtualHideoutVM.box` to package.
 If you are using this box make sure you remove any preexisitng boxes named VirtualHideoutVM.box already in the vagrant box repository by `vagrant box remove VirtualHideoutVM.box`.
 
 ## Steps to manually build box.
+
+### Prerequisites for manual build
+- Alpine boot iso
 
 1. Start Virtual Box and create an "Alpine Build" VM. This VM is not the packaged VM.
 Instead, this VM is used to build/setup the alpine VM to be used. However, the disk size you select for the build VM is the disk size used for the primary VM. 
@@ -94,11 +99,9 @@ Start the Alpine Build VM with the Alpine Linux Virtual distribution iso from th
 
 * To increase compile time of the linux kernel (final step in the provision process) change the -jx parameter of the make command in the Vagrant file and let x be the number of cores to use for the compilation.
 
-## Setup the Vagrantfile
+## Setup the Vagrantfile (for manual builds)
 
 If the Vagrantfile is being setup directly after packaging a VirtualHideoutVM box then a VagrantFile should automatically be created for you. The settings below will need to be added.
-
-Unfourtunately, until an S3Bucket hosting a prepackaged box (will occur eventually...) the user MUST build the vagrant box themselves initially.
 
 The required config settings in the Vagrant file are:
 
@@ -109,7 +112,7 @@ config.ssh.private_key_path="YOUR_PATH_TO_PRIVATE_KEY"`
 
 ## Prepackaged box credentials
 
-* Public/private key pair for the prepackaged box are available in this repository.
+* Public/private key pair for the VirtualHideoutVM (default provisioned)  box are available in this repository.
 
 * The general user with access to sudo has the credentials `username: virtualhideout password: virtual`
 
@@ -117,7 +120,7 @@ config.ssh.private_key_path="YOUR_PATH_TO_PRIVATE_KEY"`
 
 ## Trouble shooting:
 
-* For SSH issues, the private key for the pre-packaged box is available in the repository.
+* For SSH issues, the private key for the VirtualHideoutVM (default provisioned) box is available in the repository.
 
 * If network issues occur, try building your own box and noting the MAC address of the first network adapter and adding `config.vm.base_mac="MAC_ADDRESS_HERE"` line to the Vagrant file
 
