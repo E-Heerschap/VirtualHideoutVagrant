@@ -6,6 +6,8 @@ capable of compiling and running the VirtualHideout kernel modules. This box is 
 ## Prerequisites
 - Virtual Box
 - Package (HashiCorp utility for packaging virtual box)
+- Vagrant Host Shell Plugin: `vagrant plugin install vagrant-host-shell`
+- Vagrant Reload Plugin: `Vagrant plugin install vagrant-reload`
 
 ## Steps to build box via Vagrantfile
 
