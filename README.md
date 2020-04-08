@@ -128,6 +128,8 @@ config.ssh.private_key_path="YOUR_PATH_TO_PRIVATE_KEY"`
 
 * The provisioning process assumes four cores are available for the compilation of the linux kernel. This may be problematic for some pcs. This can be changed by changing the -jx parameter of the make command in the Vagrant file for making the linux kernel. Replace x with the number of cores to use. -j1 is implies no parallel building.
 
+* If a message occurs that the VM cannot be renamed and there is no VM in virtual box then the old VM folder will need to be manually deleted. Check where the virtualboxvm's are created and delete the folder "VirtualHideoutVM".
+
 ## Useful resources
 
 * https://www.vagrantup.com/docs/vagrantfile/ssh_settings.html
