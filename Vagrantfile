@@ -1,5 +1,5 @@
 # Author: Edwin Heerschap
-
+# Builds an alpine linux distribution for the purpose of kernel module development.
 
 # Returns true if provisioned, false otherwise.
 # Approach taken from https://stackoverflow.com/questions/24855635/check-if-vagrant-provisioning-has-been-done
@@ -7,23 +7,34 @@ def provisioned?(vm_name='default', provider='virtualbox')
   return File.exist?(".vagrant/machines/#{vm_name}/#{provider}/action_provision")
 end
 
-
 Vagrant.configure("2") do |config|
-  
-  if provisioned?
+   
+  ##########################################
+  ## General settings
+  ##########################################
+
+    sshKeyName="VirtualHideoutVMKey"    
 
     ########################################
-    ## CREDENTIALS HERE
+    ## Processors and memory setting.
     ########################################
-    config.ssh.username="virtualhideout"
-    config.ssh.private_key_path="VirtualHideoutVM-private-key"
-    
+
+    vmMemoryMb = 2048
+    vmCoreCount = 4
+
+  if provisioned?
     ########################################
     ## SYNC FOLDERS HERE
     ########################################
     #config.vm.synced_folder "/home/user/", "/home/virtualhideout/synced"
+    config.vm.synced_folder "/home/edwin/Documents/dev/SneakyHideout/VirtualHideout/devdrivers/", "/home/virtualhideout/synced"
   end
-  
+
+
+  ##########################################
+  ## Below shouldn't be touched - Sensitive settings
+  ##########################################
+
   config.vm.box="VirtualHideoutBootstrap.box"   
   config.ssh.shell="ash"
 
@@ -31,6 +42,25 @@ Vagrant.configure("2") do |config|
     v.name = "VirtualHideoutVM"
   end
 
+  config.vm.provider "virtualbox" do |v|
+    # If changing the number of processors, any
+    # make commands -j parameter will need to
+    # be changed
+
+    v.memory = vmMemoryMb
+    v.cpus = vmCoreCount
+  end
+
+  # Directroy of Vagrantfile
+  dirname = File.dirname(__FILE__)
+
+  if provisioned?
+    config.ssh.username="virtualhideout"
+    config.ssh.private_key_path="#{dirname}/#{sshKeyName}" 
+  else
+    config.ssh.username="virtualhideout"
+    config.ssh.password="virtual"
+  end
 
   #######################################################################
   ## PROVISIONING CODE. ADVISED TO NOT EDIT.
@@ -39,53 +69,53 @@ Vagrant.configure("2") do |config|
   # Stops default mount. BootStrap box does not have required libraries for folder sharing.
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
-  if !provisioned?
-    config.ssh.username="virtualhideout"
-    config.ssh.password="virtual"
+  config.vm.provision :host_shell do |host_shell|
+    host_shell.inline = 'if [ -f ' + dirname + '/' + sshKeyName + ' ]; then rm ' + dirname + "/" + sshKeyName + ' && rm ' + dirname + "/" + sshKeyName + '.pub; fi; ssh-keygen -f ' + dirname + "/" + sshKeyName + ' -P ""'
   end
 
    config.vm.provision "shell", inline: <<-SHELL
       sudo su - root
-      echo -e 'http://dl-cdn.alpinelinux.org/alpine/v3.11/main\nhttp://dl-cdn.alpinelinux.org/alpine/edge/main\nhttp://dl-cdn.alpinelinux.org/alpine/edge/community\nhttp://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories	
+      echo -e 'http://dl-cdn.alpinelinux.org/alpine/v3.11/main\nhttp://dl-cdn.alpinelinux.org/alpine/v3.11/main\nhttp://dl-cdn.alpinelinux.org/alpine/v3.11/community' >> /etc/apk/repositories	
       apk update && apk upgrade
-      apk add alpine-sdk linux-headers virtualbox-guest-additions virtualbox-guest-modules-virt sudo
+      apk add alpine-sdk linux-headers virtualbox-guest-additions virtualbox-guest-modules-virt sudo linux-virt-dev
    SHELL
   
   # Reloading for correct install of virtualbox-guest-addtions & virtualbox-guest-modules-virt
   config.vm.provision :reload
 
-    # Adding Vagrant file directory for SSH key installation
-    config.vm.provision :host_shell do |host_shell|
-      dirname = File.dirname(__FILE__)
+  # Adding Vagrant file directory for SSH key installation
+  config.vm.provision :host_shell do |host_shell|
       host_shell.inline = 'VBoxManage sharedfolder add VirtualHideoutVM --name sshkeys --hostpath "' + dirname + '" --transient'    
-    end
-
+  end
+  
   config.vm.provision "shell", inline: <<-SHELL
      sudo modprobe -a vboxsf
      mkdir /home/virtualhideout/sshkeys
      mount -t vboxsf sshkeys /home/virtualhideout/sshkeys
      touch /home/virtualhideout/.ssh/authorized_keys
      chmod 0700 /home/virtualhideout/.ssh && chmod 0600 /home/virtualhideout/.ssh/authorized_keys
-     cat /home/virtualhideout/sshkeys/VirtualHideoutVM-public-key >> /home/virtualhideout/.ssh/authorized_keys
-     sudo setup-xorg-base xf86-video-vboxvideo xfce4 xfce4-terminal dbus-x11 lightdm-gtk-greeter xf86-input-mouse xf86-input-keyboard xf86-video-vboxvideo
+  SHELL
+  
+  config.vm.provision "shell", inline: 'cat /home/virtualhideout/sshkeys/' + sshKeyName + '.pub >> /home/virtualhideout/.ssh/authorized_keys'
+
+  config.vm.provision "shell", inline: <<-SHELL
+     sudo setup-xorg-base xfce4 xfce4-terminal dbus-x11 lightdm-gtk-greeter xf86-input-mouse xf86-input-keyboard xf86-video-vmware
      sudo rc-service dbus start
      sudo rc-update add dbus
      cd /home/virtualhideout/
-     wget -O /home/virtualhideout/linux-5.4.30.tar.xz https://mirrors.edge.kernel.org/pub/linux/kernel/v5.x/linux-5.4.30.tar.xz
-     tar -xf linux-5.4.30.tar.xz && rm linux-5.4.30.tar.xz
-     sudo chown virtualhideout linux-5.4.30
-     sudo apk add openssl openssl-dev bison flex elfutils elfutils-dev ncurses ncurses-dev
-     mkdir build
-     sudo cp /boot/config-virt /home/virtualhideout/build/.config
-     make -j4 -C /home/virtualhideout/linux-5.4.30 O=/home/virtualhideout/build
-     sudo echo "rc_need=udev-settle" > /etc/conf.d/networking && lbu ci
+     ln -s /lib/modules/5.4.34-0-virt/build/ build
+  SHELL
+     
+   config.vm.provision "shell", inline: <<-SHELL
      sudo umount /home/virtualhideout/sshkeys
      rmdir /home/virtualhideout/sshkeys
   SHELL
 
   config.vm.provision "shell", inline: <<-SHELL
-    echo "\033[1;32m\u001b[40m The error message is intentional. It complains because the machine is being powered down. Run 'vagrant up' again for the fully provisioned machine.\033[0m\n"   
+    modprobe -a vboxsf
+    echo "\033[1;32m\u001b[40m Provisioning completed and powering down VM.  Run 'vagrant up' again for the fully provisioned machine.\033[0m\n"   
     sudo poweroff
   SHELL
 
 end
+
