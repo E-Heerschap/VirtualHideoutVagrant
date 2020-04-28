@@ -30,6 +30,10 @@ Vagrant.configure("2") do |config|
     config.vm.synced_folder "/home/edwin/Documents/dev/SneakyHideout/VirtualHideout/devdrivers/", "/home/virtualhideout/synced"
   end
 
+    #######################################
+    ## VM 1st Adapter MAC Address
+    #######################################
+    config.vm.base_mac="0800279AD647"
 
   ##########################################
   ## Below shouldn't be touched - Sensitive settings

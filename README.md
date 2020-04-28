@@ -61,7 +61,7 @@ Start the Alpine Build VM with the Alpine Linux Virtual distribution iso from th
 
 * For SSH issues, the private key for the VirtualHideoutVM (default provisioned) box is available in the repository.
 
-* If network issues occur, try building your own box and noting the MAC address of the first network adapter and adding `config.vm.base_mac="MAC_ADDRESS_HERE"` line to the Vagrant file
+* If network or SSH issues occur, try building your own box and noting the MAC address of the first network adapter and adding `config.vm.base_mac="MAC_ADDRESS_HERE"` line to the Vagrant file
 
 * The provisioning process assumes four cores are available for the compilation of the linux kernel. This may be problematic for some pcs. This can be changed by changing the -jx parameter of the make command in the Vagrant file for making the linux kernel. Replace x with the number of cores to use. -j1 is implies no parallel building.
 
@@ -79,4 +79,5 @@ Start the Alpine Build VM with the Alpine Linux Virtual distribution iso from th
 
 * Change hard name requirement
 
-* Dynamically generate SSH key files.
+
+
