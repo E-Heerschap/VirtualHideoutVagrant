@@ -5,7 +5,7 @@
 # Approach taken from https://stackoverflow.com/questions/24855635/check-if-vagrant-provisioning-has-been-done
 def provisioned?(vm_name='default', provider='virtualbox')
   return File.exist?(".vagrant/machines/#{vm_name}/#{provider}/action_provision")
-end
+end 
 
 Vagrant.configure("2") do |config|
    
@@ -13,7 +13,9 @@ Vagrant.configure("2") do |config|
   ## General settings
   ##########################################
 
-    sshKeyName="VirtualHideoutVMKey"    
+    sshKeyName="VirtualHideoutVMKey"
+    vmName="VirtualHideoutVM"    
+    hostIP="192.168.2.1" # This can be any valid 'host' field in an /etc/exports file.
 
     ########################################
     ## Processors and memory setting.
@@ -26,14 +28,9 @@ Vagrant.configure("2") do |config|
     ########################################
     ## SYNC FOLDERS HERE
     ########################################
-    #config.vm.synced_folder "/home/user/", "/home/virtualhideout/synced"
-    config.vm.synced_folder "/home/edwin/Documents/dev/SneakyHideout/VirtualHideout/devdrivers/", "/home/virtualhideout/synced"
-  end
+    #config.vm.synced_folder "/home/user/", "/home/virtualhideout/synced" 
 
-    #######################################
-    ## VM 1st Adapter MAC Address
-    #######################################
-    config.vm.base_mac="0800279AD647"
+  end
 
   ##########################################
   ## Below shouldn't be touched - Sensitive settings
@@ -43,7 +40,7 @@ Vagrant.configure("2") do |config|
   config.ssh.shell="ash"
 
   config.vm.provider "virtualbox" do |v|
-    v.name = "VirtualHideoutVM"
+    v.name = vmName
   end
 
   config.vm.provider "virtualbox" do |v|
@@ -65,6 +62,7 @@ Vagrant.configure("2") do |config|
     config.ssh.username="virtualhideout"
     config.ssh.password="virtual"
   end
+
 
   #######################################################################
   ## PROVISIONING CODE. ADVISED TO NOT EDIT.
@@ -89,7 +87,7 @@ Vagrant.configure("2") do |config|
 
   # Adding Vagrant file directory for SSH key installation
   config.vm.provision :host_shell do |host_shell|
-      host_shell.inline = 'VBoxManage sharedfolder add VirtualHideoutVM --name sshkeys --hostpath "' + dirname + '" --transient'    
+      host_shell.inline = 'VBoxManage sharedfolder add ' + vmName + ' --name sshkeys --hostpath "' + dirname + '" --transient'    
   end
   
   config.vm.provision "shell", inline: <<-SHELL
@@ -115,7 +113,14 @@ Vagrant.configure("2") do |config|
      rmdir /home/virtualhideout/sshkeys
   SHELL
 
+
+   config.vm.provision "shell", inline: 'echo "/home/virtualhideout/build ' + hostIP + '(rw,sync)" > /etc/exports'
+
   config.vm.provision "shell", inline: <<-SHELL
+    # Fixes networking boot issue (wont be able to SSH occasionally without this)
+    sudo echo "rc_need=udev-settle" > /etc/conf.d/networking && lbu ci  
+    #sed -e 's@ttys0@@g' -i '/etc/inittab' ##TODO this needs to be changed to s0
+    #but it causes an odd bug.
     modprobe -a vboxsf
     echo "\033[1;32m\u001b[40m Provisioning completed and powering down VM.  Run 'vagrant up' again for the fully provisioned machine.\033[0m\n"   
     sudo poweroff
